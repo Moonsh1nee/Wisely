@@ -1,6 +1,19 @@
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { listCategories } from "@/lib/actions/categories";
+import {
+  listTransactions,
+  getSpendingByCategory,
+  getMonthlyTrend,
+} from "@/lib/actions/transactions";
+import { listBudgetsWithSpent } from "@/lib/actions/budgets";
+import { TransactionForm } from "@/components/transactions/TransactionForm";
+import { TransactionList } from "@/components/transactions/TransactionList";
+import { CategoryManager } from "@/components/categories/CategoryManager";
+import { BudgetSection } from "@/components/budgets/BudgetSection";
+import { SpendingByCategoryChart } from "@/components/charts/SpendingByCategoryChart";
+import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
+import { CsvImportForm } from "@/components/import/CsvImportForm";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -8,13 +21,17 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [transactionCount, categoryCount] = await Promise.all([
-    prisma.transaction.count({ where: { userId: session.user.id } }),
-    prisma.category.count({ where: { userId: session.user.id } }),
-  ]);
+  const [categories, transactions, budgets, spendingByCategory, monthlyTrend] =
+    await Promise.all([
+      listCategories(),
+      listTransactions(),
+      listBudgetsWithSpent(),
+      getSpendingByCategory(1),
+      getMonthlyTrend(6),
+    ]);
 
   return (
-    <main className="flex flex-1 flex-col p-6 gap-6">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">
           Привет, {session.user.name ?? session.user.email}
@@ -31,20 +48,21 @@ export default async function DashboardPage() {
         </form>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div className="rounded border p-4">
-          <p className="text-sm text-gray-500">Транзакции</p>
-          <p className="text-2xl font-semibold">{transactionCount}</p>
-        </div>
-        <div className="rounded border p-4">
-          <p className="text-sm text-gray-500">Категории</p>
-          <p className="text-2xl font-semibold">{categoryCount}</p>
-        </div>
+      <TransactionForm categories={categories} />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SpendingByCategoryChart data={spendingByCategory} />
+        <MonthlyTrendChart data={monthlyTrend} />
       </div>
 
-      <p className="text-sm text-gray-500">
-        MVP-скелет. Дальше: форма добавления транзакции, список, бюджеты, графики.
-      </p>
+      <TransactionList transactions={transactions} />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <CategoryManager categories={categories} />
+        <BudgetSection budgets={budgets} categories={categories} />
+      </div>
+
+      <CsvImportForm />
     </main>
   );
 }
