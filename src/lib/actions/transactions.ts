@@ -15,7 +15,7 @@ async function requireUserId(): Promise<string> {
 const createTransactionSchema = z.object({
   type: z.enum(["INCOME", "EXPENSE"]),
   amount: z.coerce.number().positive("Сумма должна быть больше нуля"),
-  currency: z.string().min(1).max(10).default("USD"),
+  accountId: z.string().optional().nullable(),
   categoryId: z.string().optional().nullable(),
   description: z.string().max(500).optional(),
   date: z.coerce.date(),
@@ -25,12 +25,28 @@ export async function createTransaction(input: unknown) {
   const userId = await requireUserId();
   const data = createTransactionSchema.parse(input);
 
+  let currency = "RUB";
+  if (data.accountId) {
+    const account = await prisma.financialAccount.findFirst({
+      where: { id: data.accountId, userId },
+      select: { currency: true },
+    });
+    if (account) currency = account.currency;
+  } else {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { defaultCurrency: true },
+    });
+    if (user) currency = user.defaultCurrency;
+  }
+
   const transaction = await prisma.transaction.create({
     data: {
       userId,
       type: data.type as TransactionType,
       amountCents: Math.round(data.amount * 100),
-      currency: data.currency,
+      currency,
+      accountId: data.accountId || null,
       categoryId: data.categoryId || null,
       description: data.description,
       date: data.date,
@@ -49,12 +65,22 @@ export async function updateTransaction(input: unknown) {
   const userId = await requireUserId();
   const data = updateTransactionSchema.parse(input);
 
+  let currency: string | undefined;
+  if (data.accountId) {
+    const account = await prisma.financialAccount.findFirst({
+      where: { id: data.accountId, userId },
+      select: { currency: true },
+    });
+    if (account) currency = account.currency;
+  }
+
   const result = await prisma.transaction.updateMany({
     where: { id: data.id, userId },
     data: {
       type: data.type as TransactionType,
       amountCents: Math.round(data.amount * 100),
-      currency: data.currency,
+      ...(currency ? { currency } : {}),
+      accountId: data.accountId || null,
       categoryId: data.categoryId || null,
       description: data.description,
       date: data.date,
@@ -78,7 +104,7 @@ export async function listTransactions(limit = 50) {
   const userId = await requireUserId();
   return prisma.transaction.findMany({
     where: { userId },
-    include: { category: true },
+    include: { category: true, account: true },
     orderBy: { date: "desc" },
     take: limit,
   });

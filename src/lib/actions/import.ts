@@ -28,8 +28,24 @@ export interface ImportResult {
 export async function importCsvStatement(
   csvText: string,
   mapping: ImportColumnMapping,
+  accountId?: string | null,
 ): Promise<ImportResult> {
   const userId = await requireUserId();
+
+  let currency = "RUB";
+  if (accountId) {
+    const account = await prisma.financialAccount.findFirst({
+      where: { id: accountId, userId },
+      select: { currency: true },
+    });
+    if (account) currency = account.currency;
+  } else {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { defaultCurrency: true },
+    });
+    if (user) currency = user.defaultCurrency;
+  }
 
   const parsed = Papa.parse<Record<string, string>>(csvText, {
     header: true,
@@ -60,6 +76,8 @@ export async function importCsvStatement(
           userId,
           type: parsedRow.type,
           amountCents: parsedRow.amountCents,
+          currency,
+          accountId: accountId || null,
           description: parsedRow.description,
           date: parsedRow.date,
           importHash: parsedRow.importHash,

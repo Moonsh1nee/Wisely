@@ -17,6 +17,12 @@ interface Category {
   type: "INCOME" | "EXPENSE";
 }
 
+interface Account {
+  id: string;
+  name: string;
+  currency: string;
+}
+
 interface Transaction {
   id: string;
   type: "INCOME" | "EXPENSE";
@@ -26,6 +32,8 @@ interface Transaction {
   date: Date;
   categoryId: string | null;
   category: { name: string } | null;
+  accountId: string | null;
+  account: { name: string } | null;
 }
 
 function formatAmount(amountCents: number, currency: string) {
@@ -37,9 +45,11 @@ function formatAmount(amountCents: number, currency: string) {
 export function TransactionList({
   transactions,
   categories,
+  accounts = [],
 }: {
   transactions: Transaction[];
   categories: Category[];
+  accounts?: Account[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState<Transaction | null>(null);
@@ -66,6 +76,7 @@ export function TransactionList({
               <th className="px-4 py-3 font-medium">Дата</th>
               <th className="px-4 py-3 font-medium">Описание</th>
               <th className="px-4 py-3 font-medium">Категория</th>
+              <th className="px-4 py-3 font-medium">Счёт</th>
               <th className="px-4 py-3 text-right font-medium">Сумма</th>
               <th className="px-4 py-3" />
             </tr>
@@ -81,6 +92,9 @@ export function TransactionList({
                   <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
                     {tx.category?.name ?? "Без категории"}
                   </span>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {tx.account?.name ?? "—"}
                 </td>
                 <td
                   className={`px-4 py-3 text-right font-medium tabular-nums ${
@@ -126,10 +140,12 @@ export function TransactionList({
           {editing && (
             <TransactionForm
               categories={categories}
+              accounts={accounts}
               transaction={{
                 id: editing.id,
                 type: editing.type,
                 amount: editing.amountCents / 100,
+                accountId: editing.accountId,
                 categoryId: editing.categoryId,
                 description: editing.description,
                 date: new Date(editing.date).toISOString().slice(0, 10),

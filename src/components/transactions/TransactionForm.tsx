@@ -19,6 +19,7 @@ import {
 const formSchema = z.object({
   type: z.enum(["EXPENSE", "INCOME"]),
   amount: z.coerce.number().positive("Сумма должна быть больше нуля"),
+  accountId: z.string().optional(),
   categoryId: z.string().optional(),
   description: z.string().max(500).optional(),
   date: z.string().min(1),
@@ -33,10 +34,17 @@ interface Category {
   type: "INCOME" | "EXPENSE";
 }
 
+interface Account {
+  id: string;
+  name: string;
+  currency: string;
+}
+
 export interface EditableTransaction {
   id: string;
   type: "INCOME" | "EXPENSE";
   amount: number;
+  accountId: string | null;
   categoryId: string | null;
   description: string | null;
   date: string;
@@ -44,11 +52,12 @@ export interface EditableTransaction {
 
 interface TransactionFormProps {
   categories: Category[];
+  accounts?: Account[];
   transaction?: EditableTransaction;
   onDone?: () => void;
 }
 
-export function TransactionForm({ categories, transaction, onDone }: TransactionFormProps) {
+export function TransactionForm({ categories, accounts = [], transaction, onDone }: TransactionFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const today = new Date().toISOString().slice(0, 10);
@@ -67,6 +76,7 @@ export function TransactionForm({ categories, transaction, onDone }: Transaction
       ? {
           type: transaction.type,
           amount: transaction.amount,
+          accountId: transaction.accountId ?? "",
           categoryId: transaction.categoryId ?? "",
           description: transaction.description ?? "",
           date: transaction.date,
@@ -79,6 +89,7 @@ export function TransactionForm({ categories, transaction, onDone }: Transaction
       reset({
         type: transaction.type,
         amount: transaction.amount,
+        accountId: transaction.accountId ?? "",
         categoryId: transaction.categoryId ?? "",
         description: transaction.description ?? "",
         date: transaction.date,
@@ -98,6 +109,7 @@ export function TransactionForm({ categories, transaction, onDone }: Transaction
             id: transaction.id,
             ...data,
             date: new Date(data.date),
+            accountId: data.accountId || null,
             categoryId: data.categoryId || null,
           });
           onDone?.();
@@ -105,6 +117,7 @@ export function TransactionForm({ categories, transaction, onDone }: Transaction
           await createTransaction({
             ...data,
             date: new Date(data.date),
+            accountId: data.accountId || null,
             categoryId: data.categoryId || null,
           });
           reset({ type: data.type, date: today });
@@ -155,6 +168,34 @@ export function TransactionForm({ categories, transaction, onDone }: Transaction
             className={isEdit ? "" : "w-28"}
           />
         </div>
+
+        {accounts.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <Label>Счёт</Label>
+            <Controller
+              control={control}
+              name="accountId"
+              render={({ field }) => (
+                <Select
+                  value={field.value || "none"}
+                  onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger className={isEdit ? "" : "w-40"}>
+                    <SelectValue placeholder="Без счёта" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Без счёта</SelectItem>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        )}
 
         <div className="flex flex-col gap-1.5">
           <Label>Категория</Label>

@@ -16,12 +16,15 @@ model User {
   image         String?
   passwordHash  String?
 
+  defaultCurrency String @default("RUB")
+
   accounts Account[]
   sessions Session[]
 
-  categories           Category[]
-  transactions         Transaction[]
-  budgets              Budget[]
+  categories            Category[]
+  financialAccounts     FinancialAccount[]
+  transactions          Transaction[]
+  budgets               Budget[]
   recurringTransactions RecurringTransaction[]
 
   createdAt DateTime @default(now())
@@ -71,6 +74,27 @@ enum TransactionType {
   EXPENSE
 }
 
+model FinancialAccount {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name                String
+  currency            String @default("RUB")
+  initialBalanceCents Int    @default(0)
+  color               String?
+  icon                String?
+  archived            Boolean @default(false)
+  sortOrder           Int     @default(0)
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
 model Category {
   id     String @id @default(cuid())
   userId String
@@ -98,9 +122,12 @@ model Transaction {
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
+  accountId String?
+  account   FinancialAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
   type        TransactionType
   amountCents Int
-  currency    String   @default("USD")
+  currency    String   @default("RUB")
   description String?
   date        DateTime
   importHash  String?
@@ -110,6 +137,7 @@ model Transaction {
 
   @@index([userId, date])
   @@index([userId, categoryId])
+  @@index([userId, accountId])
   @@unique([userId, importHash])
 }
 
@@ -147,7 +175,7 @@ model RecurringTransaction {
   categoryId  String?
   type        TransactionType
   amountCents Int
-  currency    String   @default("USD")
+  currency    String   @default("RUB")
   description String?
 
   frequency RecurrenceFrequency

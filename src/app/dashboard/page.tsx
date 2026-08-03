@@ -7,10 +7,14 @@ import {
   getMonthlyTrend,
 } from "@/lib/actions/transactions";
 import { listBudgetsWithSpent } from "@/lib/actions/budgets";
+import { listAccountsWithBalance } from "@/lib/actions/accounts";
+import { getUserSettings } from "@/lib/actions/settings";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { CategoryManager } from "@/components/categories/CategoryManager";
 import { BudgetSection } from "@/components/budgets/BudgetSection";
+import { AccountManager } from "@/components/accounts/AccountManager";
+import { CurrencySettings } from "@/components/settings/CurrencySettings";
 import { SpendingByCategoryChart } from "@/components/charts/SpendingByCategoryChart";
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { CsvImportForm } from "@/components/import/CsvImportForm";
@@ -23,13 +27,15 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [categories, transactions, budgets, spendingByCategory, monthlyTrend] =
+  const [categories, transactions, budgets, spendingByCategory, monthlyTrend, accounts, settings] =
     await Promise.all([
       listCategories(),
       listTransactions(),
       listBudgetsWithSpent(),
       getSpendingByCategory(1),
       getMonthlyTrend(6),
+      listAccountsWithBalance(),
+      getUserSettings(),
     ]);
 
   return (
@@ -53,6 +59,7 @@ export default async function DashboardPage() {
           }}
           className="flex items-center gap-2"
         >
+          <CurrencySettings defaultCurrency={settings.defaultCurrency} />
           <ThemeToggle />
           <button
             type="submit"
@@ -65,14 +72,16 @@ export default async function DashboardPage() {
 
       <SummaryCards transactions={transactions} />
 
-      <TransactionForm categories={categories} />
+      <TransactionForm categories={categories} accounts={accounts} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SpendingByCategoryChart data={spendingByCategory} />
         <MonthlyTrendChart data={monthlyTrend} />
       </div>
 
-      <TransactionList transactions={transactions} categories={categories} />
+      <TransactionList transactions={transactions} categories={categories} accounts={accounts} />
+
+      <AccountManager accounts={accounts} defaultCurrency={settings.defaultCurrency} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <CategoryManager categories={categories} />
