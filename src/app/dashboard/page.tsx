@@ -69,7 +69,7 @@ export default async function DashboardPage() {
         <MonthlyTrendChart data={monthlyTrend} />
       </div>
 
-      <TransactionList transactions={transactions} />
+      <TransactionList transactions={transactions} categories={categories} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <CategoryManager categories={categories} />

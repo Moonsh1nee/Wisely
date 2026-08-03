@@ -41,6 +41,33 @@ export async function createTransaction(input: unknown) {
   return transaction;
 }
 
+const updateTransactionSchema = createTransactionSchema.extend({
+  id: z.string(),
+});
+
+export async function updateTransaction(input: unknown) {
+  const userId = await requireUserId();
+  const data = updateTransactionSchema.parse(input);
+
+  const result = await prisma.transaction.updateMany({
+    where: { id: data.id, userId },
+    data: {
+      type: data.type as TransactionType,
+      amountCents: Math.round(data.amount * 100),
+      currency: data.currency,
+      categoryId: data.categoryId || null,
+      description: data.description,
+      date: data.date,
+    },
+  });
+
+  if (result.count === 0) {
+    throw new Error("Транзакция не найдена");
+  }
+
+  revalidatePath("/dashboard");
+}
+
 export async function deleteTransaction(transactionId: string) {
   const userId = await requireUserId();
   await prisma.transaction.deleteMany({ where: { id: transactionId, userId } });

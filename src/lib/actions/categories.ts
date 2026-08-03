@@ -52,6 +52,38 @@ export async function listCategories() {
   });
 }
 
+const updateCategorySchema = createCategorySchema.extend({
+  id: z.string(),
+});
+
+export async function updateCategory(input: unknown) {
+  const userId = await requireUserId();
+  const data = updateCategorySchema.parse(input);
+
+  try {
+    const result = await prisma.category.updateMany({
+      where: { id: data.id, userId },
+      data: {
+        name: data.name,
+        type: data.type as TransactionType,
+        color: data.color,
+        icon: data.icon,
+      },
+    });
+
+    if (result.count === 0) {
+      throw new Error("Категория не найдена");
+    }
+
+    revalidatePath("/dashboard");
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      throw new Error("Категория с таким названием уже существует");
+    }
+    throw err;
+  }
+}
+
 export async function deleteCategory(categoryId: string) {
   const userId = await requireUserId();
   await prisma.category.deleteMany({ where: { id: categoryId, userId } });

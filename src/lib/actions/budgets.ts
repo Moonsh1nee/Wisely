@@ -39,6 +39,32 @@ export async function createBudget(input: unknown) {
   return budget;
 }
 
+const updateBudgetSchema = createBudgetSchema.extend({
+  id: z.string(),
+});
+
+export async function updateBudget(input: unknown) {
+  const userId = await requireUserId();
+  const data = updateBudgetSchema.parse(input);
+
+  const result = await prisma.budget.updateMany({
+    where: { id: data.id, userId },
+    data: {
+      name: data.name,
+      limitCents: Math.round(data.limit * 100),
+      categoryId: data.categoryId || null,
+      periodStart: data.periodStart,
+      periodEnd: data.periodEnd,
+    },
+  });
+
+  if (result.count === 0) {
+    throw new Error("Бюджет не найден");
+  }
+
+  revalidatePath("/dashboard");
+}
+
 export async function deleteBudget(budgetId: string) {
   const userId = await requireUserId();
   await prisma.budget.deleteMany({ where: { id: budgetId, userId } });
@@ -71,6 +97,7 @@ export async function listBudgetsWithSpent() {
       return {
         id: budget.id,
         name: budget.name,
+        categoryId: budget.categoryId,
         categoryName: budget.category?.name ?? "Все категории",
         limit: progress.limitCents / 100,
         spent: progress.spentCents / 100,

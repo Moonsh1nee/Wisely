@@ -1,7 +1,21 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { deleteTransaction } from "@/lib/actions/transactions";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { TransactionForm } from "@/components/transactions/TransactionForm";
+
+interface Category {
+  id: string;
+  name: string;
+  type: "INCOME" | "EXPENSE";
+}
 
 interface Transaction {
   id: string;
@@ -10,6 +24,7 @@ interface Transaction {
   currency: string;
   description: string | null;
   date: Date;
+  categoryId: string | null;
   category: { name: string } | null;
 }
 
@@ -19,8 +34,15 @@ function formatAmount(amountCents: number, currency: string) {
   );
 }
 
-export function TransactionList({ transactions }: { transactions: Transaction[] }) {
+export function TransactionList({
+  transactions,
+  categories,
+}: {
+  transactions: Transaction[];
+  categories: Category[];
+}) {
   const [isPending, startTransition] = useTransition();
+  const [editing, setEditing] = useState<Transaction | null>(null);
 
   if (transactions.length === 0) {
     return (
@@ -69,20 +91,54 @@ export function TransactionList({ transactions }: { transactions: Transaction[] 
                   {formatAmount(tx.amountCents, tx.currency)}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => startTransition(() => deleteTransaction(tx.id))}
-                    className="rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
-                  >
-                    Удалить
-                  </button>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditing(tx)}
+                    >
+                      Изменить
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={isPending}
+                      onClick={() => startTransition(() => deleteTransaction(tx.id))}
+                      className="text-muted-foreground hover:bg-danger/10 hover:text-danger"
+                    >
+                      Удалить
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактировать транзакцию</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <TransactionForm
+              categories={categories}
+              transaction={{
+                id: editing.id,
+                type: editing.type,
+                amount: editing.amountCents / 100,
+                categoryId: editing.categoryId,
+                description: editing.description,
+                date: new Date(editing.date).toISOString().slice(0, 10),
+              }}
+              onDone={() => setEditing(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

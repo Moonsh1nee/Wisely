@@ -3,6 +3,14 @@
 import { useState, useTransition } from "react";
 import Papa from "papaparse";
 import { importCsvStatement } from "@/lib/actions/import";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function CsvImportForm() {
   const [file, setFile] = useState<File | null>(null);
@@ -41,9 +49,6 @@ export function CsvImportForm() {
     });
   };
 
-  const selectClass =
-    "rounded-lg border border-border bg-card px-2.5 py-1.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20";
-
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <h2 className="mb-1 text-sm font-semibold">Импорт выписки (CSV)</h2>
@@ -63,62 +68,57 @@ export function CsvImportForm() {
 
       {headers.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-3 text-sm">
-          <label className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">Дата</span>
-            <select
-              value={dateCol}
-              onChange={(e) => setDateCol(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">—</option>
-              {headers.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2">
+            <Select value={dateCol || undefined} onValueChange={setDateCol}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                {headers.map((h) => (
+                  <SelectItem key={h} value={h}>
+                    {h}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">Описание</span>
-            <select
-              value={descCol}
-              onChange={(e) => setDescCol(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">—</option>
-              {headers.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2">
+            <Select value={descCol || undefined} onValueChange={setDescCol}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                {headers.map((h) => (
+                  <SelectItem key={h} value={h}>
+                    {h}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">Сумма</span>
-            <select
-              value={amountCol}
-              onChange={(e) => setAmountCol(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">—</option>
-              {headers.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </label>
+            <Select value={amountCol || undefined} onValueChange={setAmountCol}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                {headers.map((h) => (
+                  <SelectItem key={h} value={h}>
+                    {h}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
 
-      <button
-        type="button"
-        disabled={!file || !dateCol || !descCol || !amountCol || isPending}
-        onClick={onImport}
-        className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-50"
-      >
+      <Button type="button" disabled={!file || !dateCol || !descCol || !amountCol || isPending} onClick={onImport}>
         {isPending ? "Импорт..." : "Импортировать"}
-      </button>
+      </Button>
 
       {result && (
         <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
