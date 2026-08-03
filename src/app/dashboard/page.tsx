@@ -5,6 +5,7 @@ import {
   listTransactions,
   getSpendingByCategory,
   getMonthlyTrend,
+  getSummaryStats,
 } from "@/lib/actions/transactions";
 import { listBudgetsWithSpent } from "@/lib/actions/budgets";
 import { listAccountsWithBalance } from "@/lib/actions/accounts";
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [categories, transactions, budgets, spendingByCategory, monthlyTrend, accounts, settings] =
+  const [categories, transactions, budgets, spendingByCategory, monthlyTrend, accounts, settings, summaryStats] =
     await Promise.all([
       listCategories(),
       listTransactions(),
@@ -36,6 +37,7 @@ export default async function DashboardPage() {
       getMonthlyTrend(6),
       listAccountsWithBalance(),
       getUserSettings(),
+      getSummaryStats(),
     ]);
 
   return (
@@ -70,7 +72,7 @@ export default async function DashboardPage() {
         </form>
       </header>
 
-      <SummaryCards transactions={transactions} />
+      <SummaryCards stats={summaryStats} />
 
       <TransactionForm categories={categories} accounts={accounts} />
 

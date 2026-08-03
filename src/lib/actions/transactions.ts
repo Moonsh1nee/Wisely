@@ -110,6 +110,68 @@ export async function listTransactions(limit = 50) {
   });
 }
 
+export async function getSummaryStats() {
+  const userId = await requireUserId();
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  const [allTimeAgg, monthAgg] = await Promise.all([
+    prisma.transaction.groupBy({
+      by: ["currency", "type"],
+      where: { userId },
+      _sum: { amountCents: true },
+    }),
+    prisma.transaction.groupBy({
+      by: ["currency", "type"],
+      where: { userId, date: { gte: monthStart, lt: monthEnd } },
+      _sum: { amountCents: true },
+    }),
+  ]);
+
+  type Stat = { income: number; expense: number; balance: number };
+  const balanceByCurrency = new Map<string, Stat>();
+  const monthByCurrency = new Map<string, Stat>();
+
+  for (const row of allTimeAgg) {
+    const entry = balanceByCurrency.get(row.currency) ?? { income: 0, expense: 0, balance: 0 };
+    const sum = row._sum.amountCents ?? 0;
+    if (row.type === "INCOME") {
+      entry.income += sum;
+      entry.balance += sum;
+    } else {
+      entry.expense += sum;
+      entry.balance -= sum;
+    }
+    balanceByCurrency.set(row.currency, entry);
+  }
+
+  for (const row of monthAgg) {
+    const entry = monthByCurrency.get(row.currency) ?? { income: 0, expense: 0, balance: 0 };
+    const sum = row._sum.amountCents ?? 0;
+    if (row.type === "INCOME") {
+      entry.income += sum;
+      entry.balance += sum;
+    } else {
+      entry.expense += sum;
+      entry.balance -= sum;
+    }
+    monthByCurrency.set(row.currency, entry);
+  }
+
+  const currencies = Array.from(
+    new Set([...balanceByCurrency.keys(), ...monthByCurrency.keys()]),
+  );
+
+  return currencies.map((currency) => ({
+    currency,
+    balance: balanceByCurrency.get(currency)?.balance ?? 0,
+    monthIncome: monthByCurrency.get(currency)?.income ?? 0,
+    monthExpense: monthByCurrency.get(currency)?.expense ?? 0,
+  }));
+}
+
 export async function getSpendingByCategory(monthsBack = 1) {
   const userId = await requireUserId();
   const since = new Date();

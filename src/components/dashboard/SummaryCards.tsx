@@ -1,8 +1,8 @@
-interface Transaction {
-  type: "INCOME" | "EXPENSE";
-  amountCents: number;
+interface SummaryStat {
   currency: string;
-  date: Date;
+  balance: number;
+  monthIncome: number;
+  monthExpense: number;
 }
 
 function formatMoney(cents: number, currency: string) {
@@ -13,55 +13,20 @@ function formatMoney(cents: number, currency: string) {
   }
 }
 
-function groupByCurrency(transactions: Transaction[]) {
-  const byCurrency = new Map<string, { income: number; expense: number; balance: number }>();
-  for (const tx of transactions) {
-    const entry = byCurrency.get(tx.currency) ?? { income: 0, expense: 0, balance: 0 };
-    if (tx.type === "INCOME") {
-      entry.income += tx.amountCents;
-      entry.balance += tx.amountCents;
-    } else {
-      entry.expense += tx.amountCents;
-      entry.balance -= tx.amountCents;
-    }
-    byCurrency.set(tx.currency, entry);
-  }
-  return byCurrency;
-}
-
-export function SummaryCards({ transactions }: { transactions: Transaction[] }) {
-  const now = new Date();
-  const monthTx = transactions.filter((tx) => {
-    const d = new Date(tx.date);
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-  });
-
-  const balanceByCurrency = groupByCurrency(transactions);
-  const monthByCurrency = groupByCurrency(monthTx);
-
-  const currencies = Array.from(
-    new Set([...balanceByCurrency.keys(), ...monthByCurrency.keys()]),
-  );
-
-  if (currencies.length === 0) {
-    currencies.push("RUB");
-  }
+export function SummaryCards({ stats }: { stats: SummaryStat[] }) {
+  const currencies = stats.length > 0 ? stats : [{ currency: "RUB", balance: 0, monthIncome: 0, monthExpense: 0 }];
 
   return (
     <div className="flex flex-col gap-4">
-      {currencies.map((currency) => {
-        const balance = balanceByCurrency.get(currency)?.balance ?? 0;
-        const income = monthByCurrency.get(currency)?.income ?? 0;
-        const expense = monthByCurrency.get(currency)?.expense ?? 0;
-
+      {currencies.map((stat) => {
         const cards = [
-          { label: "Общий баланс", value: balance, accent: "text-foreground" },
-          { label: "Доход за месяц", value: income, accent: "text-success" },
-          { label: "Расход за месяц", value: expense, accent: "text-danger" },
+          { label: "Общий баланс", value: stat.balance, accent: "text-foreground" },
+          { label: "Доход за месяц", value: stat.monthIncome, accent: "text-success" },
+          { label: "Расход за месяц", value: stat.monthExpense, accent: "text-danger" },
         ];
 
         return (
-          <div key={currency} className="grid gap-4 sm:grid-cols-3">
+          <div key={stat.currency} className="grid gap-4 sm:grid-cols-3">
             {cards.map((card) => (
               <div
                 key={card.label}
@@ -69,10 +34,10 @@ export function SummaryCards({ transactions }: { transactions: Transaction[] }) 
               >
                 <p className="text-xs font-medium text-muted-foreground">
                   {card.label}
-                  {currencies.length > 1 ? ` · ${currency}` : ""}
+                  {currencies.length > 1 ? ` · ${stat.currency}` : ""}
                 </p>
                 <p className={`mt-1.5 text-2xl font-semibold tabular-nums ${card.accent}`}>
-                  {formatMoney(card.value, currency)}
+                  {formatMoney(card.value, stat.currency)}
                 </p>
               </div>
             ))}
