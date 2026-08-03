@@ -24,54 +24,65 @@ export function TransactionList({ transactions }: { transactions: Transaction[] 
 
   if (transactions.length === 0) {
     return (
-      <p className="rounded border border-dashed p-6 text-center text-sm text-gray-500">
-        Транзакций пока нет. Добавьте первую выше.
-      </p>
+      <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
+        <p className="text-sm font-medium text-muted-foreground">
+          Транзакций пока нет
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Добавьте первую транзакцию выше, чтобы начать отслеживать финансы.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded border">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left text-gray-500">
-          <tr>
-            <th className="p-2">Дата</th>
-            <th className="p-2">Описание</th>
-            <th className="p-2">Категория</th>
-            <th className="p-2 text-right">Сумма</th>
-            <th className="p-2" />
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((tx) => (
-            <tr key={tx.id} className="border-t">
-              <td className="p-2 whitespace-nowrap">
-                {new Date(tx.date).toLocaleDateString("ru-RU")}
-              </td>
-              <td className="p-2">{tx.description || "—"}</td>
-              <td className="p-2">{tx.category?.name ?? "Без категории"}</td>
-              <td
-                className={`p-2 text-right font-medium ${
-                  tx.type === "INCOME" ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {tx.type === "INCOME" ? "+" : "-"}
-                {formatAmount(tx.amountCents, tx.currency)}
-              </td>
-              <td className="p-2 text-right">
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => startTransition(() => deleteTransaction(tx.id))}
-                  className="text-xs text-gray-400 hover:text-red-600 disabled:opacity-50"
-                >
-                  Удалить
-                </button>
-              </td>
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3 font-medium">Дата</th>
+              <th className="px-4 py-3 font-medium">Описание</th>
+              <th className="px-4 py-3 font-medium">Категория</th>
+              <th className="px-4 py-3 text-right font-medium">Сумма</th>
+              <th className="px-4 py-3" />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {transactions.map((tx) => (
+              <tr key={tx.id} className="transition-colors hover:bg-muted/40">
+                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+                  {new Date(tx.date).toLocaleDateString("ru-RU")}
+                </td>
+                <td className="px-4 py-3">{tx.description || "—"}</td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                    {tx.category?.name ?? "Без категории"}
+                  </span>
+                </td>
+                <td
+                  className={`px-4 py-3 text-right font-medium tabular-nums ${
+                    tx.type === "INCOME" ? "text-success" : "text-danger"
+                  }`}
+                >
+                  {tx.type === "INCOME" ? "+" : "-"}
+                  {formatAmount(tx.amountCents, tx.currency)}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => startTransition(() => deleteTransaction(tx.id))}
+                    className="rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+                  >
+                    Удалить
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

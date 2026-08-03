@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { Prisma, TransactionType } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { TransactionType } from "@prisma/client";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -23,18 +23,25 @@ export async function createCategory(input: unknown) {
   const userId = await requireUserId();
   const data = createCategorySchema.parse(input);
 
-  const category = await prisma.category.create({
-    data: {
-      userId,
-      name: data.name,
-      type: data.type as TransactionType,
-      color: data.color,
-      icon: data.icon,
-    },
-  });
+  try {
+    const category = await prisma.category.create({
+      data: {
+        userId,
+        name: data.name,
+        type: data.type as TransactionType,
+        color: data.color,
+        icon: data.icon,
+      },
+    });
 
-  revalidatePath("/dashboard");
-  return category;
+    revalidatePath("/dashboard");
+    return category;
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      throw new Error("Категория с таким названием уже существует");
+    }
+    throw err;
+  }
 }
 
 export async function listCategories() {

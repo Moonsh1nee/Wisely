@@ -58,63 +58,75 @@ export function TransactionForm({ categories }: { categories: Category[] }) {
     });
   };
 
+  const fieldClass =
+    "rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20";
+  const labelClass = "text-xs font-medium text-muted-foreground";
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="flex flex-wrap items-end gap-2 rounded border p-4"
+      className="rounded-2xl border border-border bg-card p-5 shadow-sm"
     >
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">Тип</label>
-        <select {...register("type")} className="rounded border px-2 py-1.5">
-          <option value="EXPENSE">Расход</option>
-          <option value="INCOME">Доход</option>
-        </select>
-      </div>
+      <h2 className="mb-4 text-sm font-semibold text-muted-foreground">
+        Новая транзакция
+      </h2>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass}>Тип</label>
+          <select {...register("type")} className={fieldClass}>
+            <option value="EXPENSE">Расход</option>
+            <option value="INCOME">Доход</option>
+          </select>
+        </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">Сумма</label>
-        <input
-          type="number"
-          step="0.01"
-          {...register("amount")}
-          className="w-28 rounded border px-2 py-1.5"
-        />
-      </div>
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass}>Сумма</label>
+          <input
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            {...register("amount")}
+            className={`w-28 ${fieldClass}`}
+          />
+        </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">Категория</label>
-        <select {...register("categoryId")} className="rounded border px-2 py-1.5">
-          <option value="">Без категории</option>
-          {filteredCategories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass}>Категория</label>
+          <select {...register("categoryId")} className={fieldClass}>
+            <option value="">Без категории</option>
+            {filteredCategories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">Дата</label>
-        <input type="date" {...register("date")} className="rounded border px-2 py-1.5" />
-      </div>
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass}>Дата</label>
+          <input type="date" {...register("date")} className={fieldClass} />
+        </div>
 
-      <div className="flex flex-1 min-w-[10rem] flex-col gap-1">
-        <label className="text-xs text-gray-500">Описание</label>
-        <input {...register("description")} className="w-full rounded border px-2 py-1.5" />
-      </div>
+        <div className="flex min-w-[10rem] flex-1 flex-col gap-1.5">
+          <label className={labelClass}>Описание</label>
+          <input
+            placeholder="Необязательно"
+            {...register("description")}
+            className={`w-full ${fieldClass}`}
+          />
+        </div>
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="rounded bg-black px-4 py-1.5 text-white disabled:opacity-50"
-      >
-        {isPending ? "Сохранение..." : "Добавить"}
-      </button>
+        <button
+          type="submit"
+          disabled={isPending}
+          className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-50"
+        >
+          {isPending ? "Сохранение..." : "Добавить"}
+        </button>
+      </div>
 
       {(errors.amount || error) && (
-        <p className="w-full text-sm text-red-600">
-          {errors.amount?.message ?? error}
-        </p>
+        <p className="mt-3 text-sm text-danger">{errors.amount?.message ?? error}</p>
       )}
     </form>
   );

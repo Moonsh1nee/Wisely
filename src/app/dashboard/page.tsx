@@ -14,6 +14,7 @@ import { BudgetSection } from "@/components/budgets/BudgetSection";
 import { SpendingByCategoryChart } from "@/components/charts/SpendingByCategoryChart";
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { CsvImportForm } from "@/components/import/CsvImportForm";
+import { SummaryCards } from "@/components/dashboard/SummaryCards";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -31,33 +32,46 @@ export default async function DashboardPage() {
     ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">
-          Привет, {session.user.name ?? session.user.email}
-        </h1>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 sm:p-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+            W
+          </span>
+          <div>
+            <p className="text-xs text-muted-foreground">С возвращением</p>
+            <h1 className="text-lg font-semibold leading-tight">
+              {session.user.name ?? session.user.email}
+            </h1>
+          </div>
+        </div>
         <form
           action={async () => {
             "use server";
             await signOut({ redirectTo: "/login" });
           }}
         >
-          <button type="submit" className="rounded border px-3 py-1.5 text-sm">
+          <button
+            type="submit"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
+          >
             Выйти
           </button>
         </form>
-      </div>
+      </header>
+
+      <SummaryCards transactions={transactions} />
 
       <TransactionForm categories={categories} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <SpendingByCategoryChart data={spendingByCategory} />
         <MonthlyTrendChart data={monthlyTrend} />
       </div>
 
       <TransactionList transactions={transactions} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <CategoryManager categories={categories} />
         <BudgetSection budgets={budgets} categories={categories} />
       </div>

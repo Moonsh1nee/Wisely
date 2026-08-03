@@ -42,59 +42,69 @@ export default function LoginPage() {
 
   return (
     <main className="flex flex-1 items-center justify-center p-6">
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="w-full max-w-sm space-y-4"
-      >
-        <h1 className="text-2xl font-semibold">Вход в Wisely</h1>
-
-        <div className="space-y-1">
-          <label htmlFor="email" className="text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            {...register("email")}
-            className="w-full rounded border px-3 py-2"
-          />
-          {errors.email && (
-            <p className="text-sm text-red-600">{errors.email.message}</p>
-          )}
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
+        <div className="mb-6 flex flex-col items-center gap-2 text-center">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+            W
+          </span>
+          <h1 className="text-xl font-semibold">Вход в Wisely</h1>
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="password" className="text-sm font-medium">
-            Пароль
-          </label>
-          <input
-            id="password"
-            type="password"
-            {...register("password")}
-            className="w-full rounded border px-3 py-2"
-          />
-          {errors.password && (
-            <p className="text-sm text-red-600">{errors.password.message}</p>
+        <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-1.5">
+            <label htmlFor="email" className="text-xs font-medium text-muted-foreground">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              {...register("email")}
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+            {errors.email && (
+              <p className="text-xs text-danger">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="password" className="text-xs font-medium text-muted-foreground">
+              Пароль
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              {...register("password")}
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+            {errors.password && (
+              <p className="text-xs text-danger">{errors.password.message}</p>
+            )}
+          </div>
+
+          {serverError && (
+            <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+              {serverError}
+            </p>
           )}
-        </div>
 
-        {serverError && <p className="text-sm text-red-600">{serverError}</p>}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-50"
+          >
+            {isSubmitting ? "Вход..." : "Войти"}
+          </button>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded bg-black px-3 py-2 text-white disabled:opacity-50"
-        >
-          {isSubmitting ? "Вход..." : "Войти"}
-        </button>
-
-        <p className="text-sm text-gray-600">
-          Нет аккаунта?{" "}
-          <Link href="/register" className="underline">
-            Зарегистрироваться
-          </Link>
-        </p>
-      </form>
+          <p className="text-center text-sm text-muted-foreground">
+            Нет аккаунта?{" "}
+            <Link href="/register" className="font-medium text-primary hover:underline">
+              Зарегистрироваться
+            </Link>
+          </p>
+        </form>
+      </div>
     </main>
   );
 }

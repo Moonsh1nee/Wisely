@@ -41,25 +41,34 @@ export function CsvImportForm() {
     });
   };
 
-  return (
-    <div className="rounded border p-4">
-      <h2 className="mb-3 font-medium">Импорт выписки (CSV)</h2>
+  const selectClass =
+    "rounded-lg border border-border bg-card px-2.5 py-1.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20";
 
-      <input
-        type="file"
-        accept=".csv"
-        onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
-        className="mb-3 text-sm"
-      />
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <h2 className="mb-1 text-sm font-semibold">Импорт выписки (CSV)</h2>
+      <p className="mb-4 text-xs text-muted-foreground">
+        Загрузите CSV-файл банковской выписки и сопоставьте колонки.
+      </p>
+
+      <label className="mb-3 flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground">
+        <span>{file ? file.name : "Выбрать CSV-файл"}</span>
+        <input
+          type="file"
+          accept=".csv"
+          onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
+          className="hidden"
+        />
+      </label>
 
       {headers.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2 text-sm">
-          <label className="flex items-center gap-1">
-            Дата:
+        <div className="mb-4 flex flex-wrap gap-3 text-sm">
+          <label className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Дата</span>
             <select
               value={dateCol}
               onChange={(e) => setDateCol(e.target.value)}
-              className="rounded border px-2 py-1"
+              className={selectClass}
             >
               <option value="">—</option>
               {headers.map((h) => (
@@ -69,12 +78,12 @@ export function CsvImportForm() {
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-1">
-            Описание:
+          <label className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Описание</span>
             <select
               value={descCol}
               onChange={(e) => setDescCol(e.target.value)}
-              className="rounded border px-2 py-1"
+              className={selectClass}
             >
               <option value="">—</option>
               {headers.map((h) => (
@@ -84,12 +93,12 @@ export function CsvImportForm() {
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-1">
-            Сумма:
+          <label className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Сумма</span>
             <select
               value={amountCol}
               onChange={(e) => setAmountCol(e.target.value)}
-              className="rounded border px-2 py-1"
+              className={selectClass}
             >
               <option value="">—</option>
               {headers.map((h) => (
@@ -106,12 +115,16 @@ export function CsvImportForm() {
         type="button"
         disabled={!file || !dateCol || !descCol || !amountCol || isPending}
         onClick={onImport}
-        className="rounded border px-3 py-1.5 text-sm disabled:opacity-50"
+        className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-50"
       >
         {isPending ? "Импорт..." : "Импортировать"}
       </button>
 
-      {result && <p className="mt-2 text-sm text-gray-600">{result}</p>}
+      {result && (
+        <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+          {result}
+        </p>
+      )}
     </div>
   );
 }

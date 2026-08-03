@@ -10,14 +10,14 @@ import {
 } from "recharts";
 
 const COLORS = [
-  "#111827",
-  "#4b5563",
-  "#9ca3af",
+  "#6366f1",
   "#f59e0b",
-  "#ef4444",
   "#10b981",
+  "#ef4444",
   "#3b82f6",
   "#8b5cf6",
+  "#ec4899",
+  "#14b8a6",
 ];
 
 interface SpendingSlice {
@@ -28,33 +28,51 @@ interface SpendingSlice {
 export function SpendingByCategoryChart({ data }: { data: SpendingSlice[] }) {
   if (data.length === 0) {
     return (
-      <p className="flex h-64 items-center justify-center rounded border border-dashed text-sm text-gray-500">
-        Нет данных о расходах за период
-      </p>
+      <div className="flex h-72 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
+        <p className="text-sm font-medium text-muted-foreground">
+          Нет данных о расходах
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Добавьте расходы, чтобы увидеть распределение по категориям.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="h-64 rounded border p-2">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="total"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={80}
-            label={(entry) => `${entry.name}: ${Number(entry.value ?? 0).toFixed(0)}`}
-          >
-            {data.map((_, index) => (
-              <Cell key={index} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <h2 className="mb-3 text-sm font-semibold">Расходы по категориям</h2>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="total"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={55}
+              outerRadius={85}
+              paddingAngle={2}
+              label={(entry) => `${Number(entry.value ?? 0).toFixed(0)}`}
+              labelLine={false}
+            >
+              {data.map((_, index) => (
+                <Cell key={index} fill={COLORS[index % COLORS.length]} stroke="none" />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={{
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                fontSize: 13,
+              }}
+            />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

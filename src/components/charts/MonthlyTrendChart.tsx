@@ -20,25 +20,54 @@ interface MonthlyPoint {
 export function MonthlyTrendChart({ data }: { data: MonthlyPoint[] }) {
   if (data.length === 0) {
     return (
-      <p className="flex h-64 items-center justify-center rounded border border-dashed text-sm text-gray-500">
-        Пока недостаточно данных
-      </p>
+      <div className="flex h-72 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
+        <p className="text-sm font-medium text-muted-foreground">
+          Пока недостаточно данных
+        </p>
+        <p className="text-xs text-muted-foreground">
+          График появится, когда накопится история за пару месяцев.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="h-64 rounded border p-2">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" fontSize={12} />
-          <YAxis fontSize={12} />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="income" stroke="#10b981" name="Доход" />
-          <Line type="monotone" dataKey="expense" stroke="#ef4444" name="Расход" />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <h2 className="mb-3 text-sm font-semibold">Динамика по месяцам</h2>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis dataKey="month" fontSize={12} stroke="var(--muted-foreground)" />
+            <YAxis fontSize={12} stroke="var(--muted-foreground)" />
+            <Tooltip
+              contentStyle={{
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                fontSize: 13,
+              }}
+            />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Line
+              type="monotone"
+              dataKey="income"
+              stroke="var(--success)"
+              strokeWidth={2}
+              dot={false}
+              name="Доход"
+            />
+            <Line
+              type="monotone"
+              dataKey="expense"
+              stroke="var(--danger)"
+              strokeWidth={2}
+              dot={false}
+              name="Расход"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

@@ -58,38 +58,48 @@ export function BudgetSection({
     });
   };
 
-  return (
-    <div className="rounded border p-4">
-      <h2 className="mb-3 font-medium">Бюджеты (текущий месяц)</h2>
+  const fieldClass =
+    "rounded-lg border border-border bg-card px-2.5 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20";
 
-      <div className="mb-4 space-y-2">
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <h2 className="mb-3 text-sm font-semibold">Бюджеты (текущий месяц)</h2>
+
+      <div className="mb-4 space-y-3">
         {budgets.length === 0 && (
-          <p className="text-sm text-gray-500">Бюджетов пока нет.</p>
+          <p className="text-sm text-muted-foreground">Бюджетов пока нет.</p>
         )}
         {budgets.map((b) => {
           const pct = b.limit > 0 ? Math.min(100, (b.spent / b.limit) * 100) : 0;
           const over = b.spent > b.limit;
           return (
-            <div key={b.id} className="space-y-1">
+            <div key={b.id} className="space-y-1.5">
               <div className="flex items-center justify-between text-sm">
-                <span>
-                  {b.name} <span className="text-gray-400">({b.categoryName})</span>
+                <span className="font-medium">
+                  {b.name}{" "}
+                  <span className="font-normal text-muted-foreground">
+                    ({b.categoryName})
+                  </span>
                 </span>
-                <span className={over ? "text-red-600" : "text-gray-600"}>
-                  {b.spent.toFixed(2)} / {b.limit.toFixed(2)}
-                </span>
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => startTransition(() => deleteBudget(b.id))}
-                  className="text-xs text-gray-400 hover:text-red-600"
-                >
-                  Удалить
-                </button>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`tabular-nums ${over ? "font-medium text-danger" : "text-muted-foreground"}`}
+                  >
+                    {b.spent.toFixed(2)} / {b.limit.toFixed(2)}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => startTransition(() => deleteBudget(b.id))}
+                    className="text-xs text-muted-foreground transition-colors hover:text-danger"
+                  >
+                    Удалить
+                  </button>
+                </div>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded bg-gray-100">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className={`h-full ${over ? "bg-red-500" : "bg-black"}`}
+                  className={`h-full rounded-full transition-all ${over ? "bg-danger" : "bg-primary"}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -103,7 +113,7 @@ export function BudgetSection({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Название бюджета"
-          className="rounded border px-2 py-1.5 text-sm"
+          className={fieldClass}
         />
         <input
           value={limit}
@@ -111,12 +121,12 @@ export function BudgetSection({
           type="number"
           step="0.01"
           placeholder="Лимит"
-          className="w-28 rounded border px-2 py-1.5 text-sm"
+          className={`w-28 ${fieldClass}`}
         />
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="rounded border px-2 py-1.5 text-sm"
+          className={fieldClass}
         >
           <option value="">Все категории</option>
           {expenseCategories.map((c) => (
@@ -127,9 +137,9 @@ export function BudgetSection({
         </select>
         <button
           type="button"
-          disabled={isPending}
+          disabled={isPending || !name.trim() || !limit}
           onClick={onAdd}
-          className="rounded border px-3 py-1.5 text-sm disabled:opacity-50"
+          className="rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-50"
         >
           Добавить бюджет
         </button>
