@@ -15,6 +15,7 @@ import { SpendingByCategoryChart } from "@/components/charts/SpendingByCategoryC
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { CsvImportForm } from "@/components/import/CsvImportForm";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -50,7 +51,9 @@ export default async function DashboardPage() {
             "use server";
             await signOut({ redirectTo: "/login" });
           }}
+          className="flex items-center gap-2"
         >
+          <ThemeToggle />
           <button
             type="submit"
             className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
