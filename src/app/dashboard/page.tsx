@@ -88,7 +88,7 @@ export default async function DashboardPage() {
         <BudgetSection budgets={budgets} categories={categories} />
       </div>
 
-      <CsvImportForm />
+      <CsvImportForm accounts={accounts} />
     </main>
   );
 }

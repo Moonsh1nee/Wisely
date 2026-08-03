@@ -12,12 +12,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export function CsvImportForm() {
+interface Account {
+  id: string;
+  name: string;
+}
+
+export function CsvImportForm({ accounts = [] }: { accounts?: Account[] }) {
   const [file, setFile] = useState<File | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
   const [dateCol, setDateCol] = useState("");
   const [descCol, setDescCol] = useState("");
   const [amountCol, setAmountCol] = useState("");
+  const [accountId, setAccountId] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -42,7 +48,7 @@ export function CsvImportForm() {
         date: dateCol,
         description: descCol,
         amount: amountCol,
-      });
+      }, accountId || null);
       setResult(
         `Импортировано: ${res.imported}, дубликатов пропущено: ${res.skippedDuplicates}, невалидных: ${res.skippedInvalid} (всего строк: ${res.totalRows})`,
       );
@@ -68,6 +74,27 @@ export function CsvImportForm() {
 
       {headers.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-3 text-sm">
+          {accounts.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">Счёт</span>
+              <Select
+                value={accountId || "none"}
+                onValueChange={(v) => setAccountId(v === "none" ? "" : v)}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Без счёта" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Без счёта</SelectItem>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">Дата</span>
             <Select value={dateCol || undefined} onValueChange={setDateCol}>
