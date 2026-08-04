@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
+import { groupSpendingByCategory, groupMonthlyTrend } from "@/lib/chart-calc";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -100,14 +101,40 @@ export async function deleteTransaction(transactionId: string) {
   revalidatePath("/dashboard");
 }
 
-export async function listTransactions(limit = 50) {
+export async function listTransactions({
+  page = 1,
+  pageSize = 25,
+}: { page?: number; pageSize?: number } = {}) {
   const userId = await requireUserId();
-  return prisma.transaction.findMany({
+
+  const [transactions, totalCount] = await prisma.$transaction([
+    prisma.transaction.findMany({
+      where: { userId },
+      include: { category: true, account: true },
+      orderBy: { date: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.transaction.count({ where: { userId } }),
+  ]);
+
+  return {
+    transactions,
+    totalCount,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
+  };
+}
+
+export async function listUsedCurrencies(): Promise<string[]> {
+  const userId = await requireUserId();
+  const rows = await prisma.transaction.findMany({
     where: { userId },
-    include: { category: true, account: true },
-    orderBy: { date: "desc" },
-    take: limit,
+    distinct: ["currency"],
+    select: { currency: true },
   });
+  return rows.map((r) => r.currency);
 }
 
 export async function getSummaryStats() {
@@ -172,56 +199,29 @@ export async function getSummaryStats() {
   }));
 }
 
-export async function getSpendingByCategory(monthsBack = 1) {
+export async function getSpendingByCategory(monthsBack: number, currency: string) {
   const userId = await requireUserId();
   const since = new Date();
   since.setMonth(since.getMonth() - monthsBack);
 
   const transactions = await prisma.transaction.findMany({
-    where: { userId, type: "EXPENSE", date: { gte: since } },
+    where: { userId, type: "EXPENSE", currency, date: { gte: since } },
     include: { category: true },
   });
 
-  const byCategory = new Map<string, { name: string; total: number }>();
-  for (const tx of transactions) {
-    const key = tx.category?.id ?? "uncategorized";
-    const name = tx.category?.name ?? "Без категории";
-    const entry = byCategory.get(key) ?? { name, total: 0 };
-    entry.total += tx.amountCents;
-    byCategory.set(key, entry);
-  }
-
-  return Array.from(byCategory.values()).map((entry) => ({
-    name: entry.name,
-    total: entry.total / 100,
-  }));
+  return groupSpendingByCategory(transactions);
 }
 
-export async function getMonthlyTrend(monthsBack = 6) {
+export async function getMonthlyTrend(monthsBack: number, currency: string) {
   const userId = await requireUserId();
   const since = new Date();
   since.setMonth(since.getMonth() - monthsBack);
   since.setDate(1);
 
   const transactions = await prisma.transaction.findMany({
-    where: { userId, date: { gte: since } },
+    where: { userId, currency, date: { gte: since } },
     select: { type: true, amountCents: true, date: true },
   });
 
-  const byMonth = new Map<string, { income: number; expense: number }>();
-  for (const tx of transactions) {
-    const key = `${tx.date.getFullYear()}-${String(tx.date.getMonth() + 1).padStart(2, "0")}`;
-    const entry = byMonth.get(key) ?? { income: 0, expense: 0 };
-    if (tx.type === "INCOME") entry.income += tx.amountCents;
-    else entry.expense += tx.amountCents;
-    byMonth.set(key, entry);
-  }
-
-  return Array.from(byMonth.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, v]) => ({
-      month,
-      income: v.income / 100,
-      expense: v.expense / 100,
-    }));
+  return groupMonthlyTrend(transactions);
 }

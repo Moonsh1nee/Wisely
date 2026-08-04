@@ -87,7 +87,8 @@ model FinancialAccount {
   archived            Boolean @default(false)
   sortOrder           Int     @default(0)
 
-  transactions Transaction[]
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -105,8 +106,9 @@ model Category {
   color String?
   type  TransactionType
 
-  transactions Transaction[]
-  budgets      Budget[]
+  transactions          Transaction[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
 
   createdAt DateTime @default(now())
 
@@ -151,6 +153,7 @@ model Budget {
 
   name        String
   limitCents  Int
+  currency    String   @default("RUB")
   periodStart DateTime
   periodEnd   DateTime
 
@@ -172,7 +175,12 @@ model RecurringTransaction {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  categoryId  String?
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  accountId String?
+  account   FinancialAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
   type        TransactionType
   amountCents Int
   currency    String   @default("RUB")

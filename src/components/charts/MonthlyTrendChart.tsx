@@ -10,6 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface MonthlyPoint {
   month: string;
@@ -32,42 +33,46 @@ export function MonthlyTrendChart({ data }: { data: MonthlyPoint[] }) {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <h2 className="mb-3 text-sm font-semibold">Динамика по месяцам</h2>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey="month" fontSize={12} stroke="var(--muted-foreground)" />
-            <YAxis fontSize={12} stroke="var(--muted-foreground)" />
-            <Tooltip
-              contentStyle={{
-                background: "var(--card)",
-                border: "1px solid var(--border)",
-                borderRadius: 12,
-                fontSize: 13,
-              }}
-            />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Line
-              type="monotone"
-              dataKey="income"
-              stroke="var(--success)"
-              strokeWidth={2}
-              dot={false}
-              name="Доход"
-            />
-            <Line
-              type="monotone"
-              dataKey="expense"
-              stroke="var(--danger)"
-              strokeWidth={2}
-              dot={false}
-              name="Расход"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Динамика по месяцам</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="month" fontSize={12} stroke="var(--muted-foreground)" />
+              <YAxis fontSize={12} stroke="var(--muted-foreground)" />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 12,
+                  fontSize: 13,
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Line
+                type="monotone"
+                dataKey="income"
+                stroke="var(--success)"
+                strokeWidth={2}
+                dot={false}
+                name="Доход"
+              />
+              <Line
+                type="monotone"
+                dataKey="expense"
+                stroke="var(--danger)"
+                strokeWidth={2}
+                dot={false}
+                name="Расход"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

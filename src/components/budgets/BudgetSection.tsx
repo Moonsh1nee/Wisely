@@ -2,10 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { Pencil } from "lucide-react";
+import { toast } from "sonner";
 import { createBudget, deleteBudget, updateBudget } from "@/lib/actions/budgets";
+import { SUPPORTED_CURRENCIES } from "@/lib/currencies";
+import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +30,11 @@ interface BudgetWithSpent {
   name: string;
   categoryId: string | null;
   categoryName: string;
+  currency: string;
   limit: number;
   spent: number;
+  percentUsed: number;
+  isOverBudget: boolean;
   periodStart: Date;
   periodEnd: Date;
 }
@@ -50,36 +58,46 @@ function lastOfMonth() {
 export function BudgetSection({
   budgets,
   categories,
+  defaultCurrency,
 }: {
   budgets: BudgetWithSpent[];
   categories: Category[];
+  defaultCurrency: string;
 }) {
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [limit, setLimit] = useState("");
+  const [currency, setCurrency] = useState(defaultCurrency);
   const [categoryId, setCategoryId] = useState("");
   const expenseCategories = categories.filter((c) => c.type === "EXPENSE");
 
   const [editing, setEditing] = useState<BudgetWithSpent | null>(null);
   const [editName, setEditName] = useState("");
   const [editLimit, setEditLimit] = useState("");
+  const [editCurrency, setEditCurrency] = useState("");
   const [editCategoryId, setEditCategoryId] = useState("");
-  const [editError, setEditError] = useState<string | null>(null);
   const [isEditPending, startEditTransition] = useTransition();
 
   const onAdd = () => {
     if (!name.trim() || !limit) return;
     startTransition(async () => {
-      await createBudget({
-        name: name.trim(),
-        limit: Number(limit),
-        categoryId: categoryId || null,
-        periodStart: new Date(firstOfMonth()),
-        periodEnd: new Date(lastOfMonth()),
-      });
-      setName("");
-      setLimit("");
-      setCategoryId("");
+      try {
+        await createBudget({
+          name: name.trim(),
+          limit: Number(limit),
+          currency,
+          categoryId: categoryId || null,
+          periodStart: new Date(firstOfMonth()),
+          periodEnd: new Date(lastOfMonth()),
+        });
+        toast.success("Бюджет создан");
+        setName("");
+        setLimit("");
+        setCurrency(defaultCurrency);
+        setCategoryId("");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Не удалось создать бюджет");
+      }
     });
   };
 
@@ -87,42 +105,53 @@ export function BudgetSection({
     setEditing(b);
     setEditName(b.name);
     setEditLimit(String(b.limit));
+    setEditCurrency(b.currency);
     setEditCategoryId(b.categoryId ?? "");
-    setEditError(null);
   };
 
   const onSaveEdit = () => {
     if (!editing || !editName.trim() || !editLimit) return;
-    setEditError(null);
     startEditTransition(async () => {
       try {
         await updateBudget({
           id: editing.id,
           name: editName.trim(),
           limit: Number(editLimit),
+          currency: editCurrency,
           categoryId: editCategoryId || null,
           periodStart: editing.periodStart,
           periodEnd: editing.periodEnd,
         });
+        toast.success("Бюджет сохранён");
         setEditing(null);
       } catch (err) {
-        setEditError(err instanceof Error ? err.message : "Не удалось сохранить бюджет");
+        toast.error(err instanceof Error ? err.message : "Не удалось сохранить бюджет");
+      }
+    });
+  };
+
+  const onDelete = (b: BudgetWithSpent) => {
+    startTransition(async () => {
+      try {
+        await deleteBudget(b.id);
+        toast.success(`Бюджет «${b.name}» удалён`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Не удалось удалить бюджет");
       }
     });
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <h2 className="mb-3 text-sm font-semibold">Бюджеты (текущий месяц)</h2>
-
-      <div className="mb-4 space-y-3">
-        {budgets.length === 0 && (
-          <p className="text-sm text-muted-foreground">Бюджетов пока нет.</p>
-        )}
-        {budgets.map((b) => {
-          const pct = b.limit > 0 ? Math.min(100, (b.spent / b.limit) * 100) : 0;
-          const over = b.spent > b.limit;
-          return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Бюджеты (текущий месяц)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4 space-y-3">
+          {budgets.length === 0 && (
+            <p className="text-sm text-muted-foreground">Бюджетов пока нет.</p>
+          )}
+          {budgets.map((b) => (
             <div key={b.id} className="space-y-1.5">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">
@@ -133,9 +162,9 @@ export function BudgetSection({
                 </span>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`tabular-nums ${over ? "font-medium text-danger" : "text-muted-foreground"}`}
+                    className={`tabular-nums ${b.isOverBudget ? "font-medium text-danger" : "text-muted-foreground"}`}
                   >
-                    {b.spent.toFixed(2)} / {b.limit.toFixed(2)}
+                    {formatMoney(b.spent, b.currency)} / {formatMoney(b.limit, b.currency)}
                   </span>
                   <button
                     type="button"
@@ -148,111 +177,137 @@ export function BudgetSection({
                   <button
                     type="button"
                     disabled={isPending}
-                    onClick={() => startTransition(() => deleteBudget(b.id))}
+                    onClick={() => onDelete(b)}
                     className="text-xs text-muted-foreground transition-colors hover:text-danger"
                   >
                     Удалить
                   </button>
                 </div>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className={`h-full rounded-full transition-all ${over ? "bg-danger" : "bg-primary"}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Название бюджета"
-          className="w-auto"
-        />
-        <Input
-          value={limit}
-          onChange={(e) => setLimit(e.target.value)}
-          type="number"
-          step="0.01"
-          placeholder="Лимит"
-          className="w-28"
-        />
-        <Select value={categoryId || "none"} onValueChange={(v) => setCategoryId(v === "none" ? "" : v)}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Все категории" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Все категории</SelectItem>
-            {expenseCategories.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={isPending || !name.trim() || !limit}
-          onClick={onAdd}
-        >
-          Добавить бюджет
-        </Button>
-      </div>
-
-      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Редактировать бюджет</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label>Название</Label>
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Лимит</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={editLimit}
-                onChange={(e) => setEditLimit(e.target.value)}
+              <Progress
+                value={b.percentUsed}
+                className={`**:data-[slot=progress-track]:h-2 ${
+                  b.isOverBudget ? "[--color-primary:var(--danger)]" : ""
+                }`}
               />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Категория</Label>
-              <Select
-                value={editCategoryId || "none"}
-                onValueChange={(v) => setEditCategoryId(v === "none" ? "" : v)}
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Название бюджета"
+            className="w-full sm:w-auto"
+          />
+          <Input
+            value={limit}
+            onChange={(e) => setLimit(e.target.value)}
+            type="number"
+            step="0.01"
+            placeholder="Лимит"
+            className="w-full sm:w-28"
+          />
+          <Select value={currency} onValueChange={setCurrency}>
+            <SelectTrigger className="w-full sm:w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_CURRENCIES.map((c) => (
+                <SelectItem key={c.code} value={c.code}>
+                  {c.code}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={categoryId || "none"} onValueChange={(v) => setCategoryId(v === "none" ? "" : v)}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Все категории" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Все категории</SelectItem>
+              {expenseCategories.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isPending || !name.trim() || !limit}
+            onClick={onAdd}
+          >
+            Добавить бюджет
+          </Button>
+        </div>
+
+        <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Редактировать бюджет</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Название</Label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Лимит</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editLimit}
+                  onChange={(e) => setEditLimit(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Валюта</Label>
+                <Select value={editCurrency} onValueChange={setEditCurrency}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Категория</Label>
+                <Select
+                  value={editCategoryId || "none"}
+                  onValueChange={(v) => setEditCategoryId(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Все категории" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Все категории</SelectItem>
+                    {expenseCategories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                type="button"
+                disabled={isEditPending || !editName.trim() || !editLimit}
+                onClick={onSaveEdit}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Все категории" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Все категории</SelectItem>
-                  {expenseCategories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {isEditPending ? "Сохранение..." : "Сохранить"}
+              </Button>
             </div>
-            {editError && <p className="text-xs text-danger">{editError}</p>}
-            <Button
-              type="button"
-              disabled={isEditPending || !editName.trim() || !editLimit}
-              onClick={onSaveEdit}
-            >
-              {isEditPending ? "Сохранение..." : "Сохранить"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
   );
 }

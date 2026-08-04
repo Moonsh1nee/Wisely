@@ -1,14 +1,25 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { deleteTransaction } from "@/lib/actions/transactions";
+import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 
 interface Category {
@@ -36,12 +47,6 @@ interface Transaction {
   account: { name: string } | null;
 }
 
-function formatAmount(amountCents: number, currency: string) {
-  return new Intl.NumberFormat("ru-RU", { style: "currency", currency }).format(
-    amountCents / 100,
-  );
-}
-
 export function TransactionList({
   transactions,
   categories,
@@ -53,6 +58,17 @@ export function TransactionList({
 }) {
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState<Transaction | null>(null);
+
+  const onDelete = (tx: Transaction) => {
+    startTransition(async () => {
+      try {
+        await deleteTransaction(tx.id);
+        toast.success("Транзакция удалена");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Не удалось удалить транзакцию");
+      }
+    });
+  };
 
   if (transactions.length === 0) {
     return (
@@ -69,68 +85,64 @@ export function TransactionList({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium">Дата</th>
-              <th className="px-4 py-3 font-medium">Описание</th>
-              <th className="px-4 py-3 font-medium">Категория</th>
-              <th className="px-4 py-3 font-medium">Счёт</th>
-              <th className="px-4 py-3 text-right font-medium">Сумма</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {transactions.map((tx) => (
-              <tr key={tx.id} className="transition-colors hover:bg-muted/40">
-                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
-                  {new Date(tx.date).toLocaleDateString("ru-RU")}
-                </td>
-                <td className="px-4 py-3">{tx.description || "—"}</td>
-                <td className="px-4 py-3">
-                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                    {tx.category?.name ?? "Без категории"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {tx.account?.name ?? "—"}
-                </td>
-                <td
-                  className={`px-4 py-3 text-right font-medium tabular-nums ${
-                    tx.type === "INCOME" ? "text-success" : "text-danger"
-                  }`}
-                >
-                  {tx.type === "INCOME" ? "+" : "-"}
-                  {formatAmount(tx.amountCents, tx.currency)}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditing(tx)}
-                    >
-                      Изменить
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={isPending}
-                      onClick={() => startTransition(() => deleteTransaction(tx.id))}
-                      className="text-muted-foreground hover:bg-danger/10 hover:text-danger"
-                    >
-                      Удалить
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Дата</TableHead>
+            <TableHead>Описание</TableHead>
+            <TableHead>Категория</TableHead>
+            <TableHead>Счёт</TableHead>
+            <TableHead className="text-right">Сумма</TableHead>
+            <TableHead />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {transactions.map((tx) => (
+            <TableRow key={tx.id}>
+              <TableCell className="text-muted-foreground">
+                {new Date(tx.date).toLocaleDateString("ru-RU")}
+              </TableCell>
+              <TableCell className="whitespace-normal">{tx.description || "—"}</TableCell>
+              <TableCell>
+                <Badge variant="outline">{tx.category?.name ?? "Без категории"}</Badge>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {tx.account?.name ?? "—"}
+              </TableCell>
+              <TableCell
+                className={`text-right font-medium tabular-nums ${
+                  tx.type === "INCOME" ? "text-success" : "text-danger"
+                }`}
+              >
+                {tx.type === "INCOME" ? "+" : "-"}
+                {formatMoney(tx.amountCents / 100, tx.currency)}
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditing(tx)}
+                  >
+                    Изменить
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => onDelete(tx)}
+                    className="text-muted-foreground hover:bg-danger/10 hover:text-danger"
+                  >
+                    Удалить
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent>

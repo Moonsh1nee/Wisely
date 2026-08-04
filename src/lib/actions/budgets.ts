@@ -15,6 +15,7 @@ async function requireUserId(): Promise<string> {
 const createBudgetSchema = z.object({
   name: z.string().min(1).max(100),
   limit: z.coerce.number().positive(),
+  currency: z.string().min(1).max(10),
   categoryId: z.string().optional().nullable(),
   periodStart: z.coerce.date(),
   periodEnd: z.coerce.date(),
@@ -29,6 +30,7 @@ export async function createBudget(input: unknown) {
       userId,
       name: data.name,
       limitCents: Math.round(data.limit * 100),
+      currency: data.currency,
       categoryId: data.categoryId || null,
       periodStart: data.periodStart,
       periodEnd: data.periodEnd,
@@ -52,6 +54,7 @@ export async function updateBudget(input: unknown) {
     data: {
       name: data.name,
       limitCents: Math.round(data.limit * 100),
+      currency: data.currency,
       categoryId: data.categoryId || null,
       periodStart: data.periodStart,
       periodEnd: data.periodEnd,
@@ -85,6 +88,7 @@ export async function listBudgetsWithSpent() {
         where: {
           userId,
           type: "EXPENSE",
+          currency: budget.currency,
           date: { gte: budget.periodStart, lte: budget.periodEnd },
           ...(budget.categoryId ? { categoryId: budget.categoryId } : {}),
         },
@@ -99,8 +103,11 @@ export async function listBudgetsWithSpent() {
         name: budget.name,
         categoryId: budget.categoryId,
         categoryName: budget.category?.name ?? "Все категории",
+        currency: budget.currency,
         limit: progress.limitCents / 100,
         spent: progress.spentCents / 100,
+        percentUsed: progress.percentUsed,
+        isOverBudget: progress.isOverBudget,
         periodStart: budget.periodStart,
         periodEnd: budget.periodEnd,
       };

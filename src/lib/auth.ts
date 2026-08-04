@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import argon2 from "argon2";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -23,11 +24,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      authorize: async (rawCredentials) => {
+      authorize: async (rawCredentials, request) => {
         const parsed = credentialsSchema.safeParse(rawCredentials);
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
+
+        const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+        const { allowed } = checkRateLimit(`login:${ip}:${email}`);
+        if (!allowed) return null;
+
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user?.passwordHash) return null;
 

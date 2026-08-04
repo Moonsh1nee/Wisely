@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { updateDefaultCurrency } from "@/lib/actions/settings";
 import { SUPPORTED_CURRENCIES } from "@/lib/currencies";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -21,20 +22,24 @@ export function CurrencySettings({ defaultCurrency }: { defaultCurrency: string 
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-muted-foreground">Валюта по умолчанию</span>
-      <Select value={currency} onValueChange={onChange} disabled={isPending}>
-        <SelectTrigger className="w-24">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {SUPPORTED_CURRENCIES.map((c) => (
-            <SelectItem key={c.code} value={c.code}>
-              {c.code}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Валюта по умолчанию</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Select value={currency} onValueChange={onChange} disabled={isPending}>
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <SelectItem key={c.code} value={c.code}>
+                {c.code}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </CardContent>
+    </Card>
   );
 }

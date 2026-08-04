@@ -7,6 +7,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 const registerSchema = z.object({
   name: z.string().min(1, "Введите имя").max(100),
@@ -56,84 +60,64 @@ export default function RegisterPage() {
 
   return (
     <main className="flex flex-1 items-center justify-center p-6">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
-        <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
-            W
-          </span>
-          <h1 className="text-xl font-semibold">Регистрация в Wisely</h1>
-        </div>
-
-        <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-1.5">
-            <label htmlFor="name" className="text-xs font-medium text-muted-foreground">
-              Имя
-            </label>
-            <input
-              id="name"
-              autoComplete="name"
-              {...register("name")}
-              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-            {errors.name && (
-              <p className="text-xs text-danger">{errors.name.message}</p>
-            )}
+      <Card className="w-full max-w-sm">
+        <CardContent>
+          <div className="mb-6 flex flex-col items-center gap-2 text-center">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+              W
+            </span>
+            <h1 className="text-xl font-semibold">Регистрация в Wisely</h1>
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="email" className="text-xs font-medium text-muted-foreground">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              {...register("email")}
-              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-            {errors.email && (
-              <p className="text-xs text-danger">{errors.email.message}</p>
-            )}
-          </div>
+          <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Имя</Label>
+              <Input id="name" autoComplete="name" {...register("name")} />
+              {errors.name && (
+                <p className="text-xs text-danger">{errors.name.message}</p>
+              )}
+            </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="password" className="text-xs font-medium text-muted-foreground">
-              Пароль
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              {...register("password")}
-              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-            {errors.password && (
-              <p className="text-xs text-danger">{errors.password.message}</p>
-            )}
-          </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" autoComplete="email" {...register("email")} />
+              {errors.email && (
+                <p className="text-xs text-danger">{errors.email.message}</p>
+              )}
+            </div>
 
-          {serverError && (
-            <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
-              {serverError}
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Пароль</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                {...register("password")}
+              />
+              {errors.password && (
+                <p className="text-xs text-danger">{errors.password.message}</p>
+              )}
+            </div>
+
+            {serverError && (
+              <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+                {serverError}
+              </p>
+            )}
+
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? "Создание..." : "Создать аккаунт"}
+            </Button>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Уже есть аккаунт?{" "}
+              <Link href="/login" className="font-medium text-primary hover:underline">
+                Войти
+              </Link>
             </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-50"
-          >
-            {isSubmitting ? "Создание..." : "Создать аккаунт"}
-          </button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            Уже есть аккаунт?{" "}
-            <Link href="/login" className="font-medium text-primary hover:underline">
-              Войти
-            </Link>
-          </p>
-        </form>
-      </div>
+          </form>
+        </CardContent>
+      </Card>
     </main>
   );
 }
