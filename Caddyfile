@@ -1,3 +1,0 @@
-{$WISELY_DOMAIN:localhost} {
-	reverse_proxy wisely:3000
-}
