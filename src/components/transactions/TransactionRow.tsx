@@ -34,8 +34,8 @@ function RowIcon({ item }: { item: TransactionRowItem }) {
   }
   if (item.category?.icon) {
     return (
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-base">
-        {item.category.icon}
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-lg leading-none">
+        <span className="-translate-y-px">{item.category.icon}</span>
       </span>
     );
   }
