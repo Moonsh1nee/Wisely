@@ -11,6 +11,10 @@ export interface SpendingCategoryRow {
 }
 
 export interface CategorySlice {
+  /** `null` = "Без категории" (a real, filterable bucket). `undefined` = the
+   * folded "Остальное" bucket, which has no single category behind it and
+   * so isn't a valid drill-down target. */
+  id: string | null | undefined;
   name: string;
   total: number;
 }
@@ -28,21 +32,22 @@ export function groupSpendingByCategory(
   const byCategory = new Map<string, CategorySlice>();
   for (const row of rows) {
     const key = row.category?.id ?? "uncategorized";
+    const id = row.category?.id ?? null;
     const name = row.category?.name ?? "Без категории";
-    const entry = byCategory.get(key) ?? { name, total: 0 };
+    const entry = byCategory.get(key) ?? { id, name, total: 0 };
     entry.total += row.amountCents;
     byCategory.set(key, entry);
   }
 
   const sorted = Array.from(byCategory.values())
-    .map((entry) => ({ name: entry.name, total: entry.total / 100 }))
+    .map((entry) => ({ id: entry.id, name: entry.name, total: entry.total / 100 }))
     .sort((a, b) => b.total - a.total);
 
   if (sorted.length <= maxSlices) return sorted;
 
   const top = sorted.slice(0, maxSlices - 1);
   const restTotal = sorted.slice(maxSlices - 1).reduce((sum, s) => sum + s.total, 0);
-  return [...top, { name: "Остальное", total: restTotal }];
+  return [...top, { id: undefined, name: "Остальное", total: restTotal }];
 }
 
 export interface MonthlyTrendRow {

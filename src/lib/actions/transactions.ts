@@ -104,18 +104,23 @@ export async function deleteTransaction(transactionId: string) {
 export async function listTransactions({
   page = 1,
   pageSize = 25,
-}: { page?: number; pageSize?: number } = {}) {
+  categoryId,
+}: { page?: number; pageSize?: number; categoryId?: string | null } = {}) {
   const userId = await requireUserId();
+  const where = {
+    userId,
+    ...(categoryId !== undefined ? { categoryId } : {}),
+  };
 
   const [transactions, totalCount] = await prisma.$transaction([
     prisma.transaction.findMany({
-      where: { userId },
+      where,
       include: { category: true, account: true },
       orderBy: { date: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.transaction.count({ where: { userId } }),
+    prisma.transaction.count({ where }),
   ]);
 
   return {

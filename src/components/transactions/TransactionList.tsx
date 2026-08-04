@@ -3,24 +3,15 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { deleteTransaction } from "@/lib/actions/transactions";
-import { formatMoney } from "@/lib/format";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { groupByDateLabel } from "@/lib/date-groups";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
+import { TransactionRow } from "@/components/transactions/TransactionRow";
 
 interface Category {
   id: string;
@@ -42,7 +33,7 @@ interface Transaction {
   description: string | null;
   date: Date;
   categoryId: string | null;
-  category: { name: string } | null;
+  category: { name: string; icon: string | null } | null;
   accountId: string | null;
   account: { name: string } | null;
 }
@@ -56,7 +47,7 @@ export function TransactionList({
   categories: Category[];
   accounts?: Account[];
 }) {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [editing, setEditing] = useState<Transaction | null>(null);
 
   const onDelete = (tx: Transaction) => {
@@ -83,66 +74,36 @@ export function TransactionList({
     );
   }
 
+  const groups = groupByDateLabel(transactions, (tx) => new Date(tx.date));
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Дата</TableHead>
-            <TableHead>Описание</TableHead>
-            <TableHead>Категория</TableHead>
-            <TableHead>Счёт</TableHead>
-            <TableHead className="text-right">Сумма</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transactions.map((tx) => (
-            <TableRow key={tx.id}>
-              <TableCell className="text-muted-foreground">
-                {new Date(tx.date).toLocaleDateString("ru-RU")}
-              </TableCell>
-              <TableCell className="whitespace-normal">{tx.description || "—"}</TableCell>
-              <TableCell>
-                <Badge variant="outline">{tx.category?.name ?? "Без категории"}</Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {tx.account?.name ?? "—"}
-              </TableCell>
-              <TableCell
-                className={`text-right font-medium tabular-nums ${
-                  tx.type === "INCOME" ? "text-success" : "text-danger"
-                }`}
-              >
-                {tx.type === "INCOME" ? "+" : "-"}
-                {formatMoney(tx.amountCents / 100, tx.currency)}
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditing(tx)}
-                  >
-                    Изменить
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={isPending}
-                    onClick={() => onDelete(tx)}
-                    className="text-muted-foreground hover:bg-danger/10 hover:text-danger"
-                  >
-                    Удалить
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="overflow-hidden rounded-2xl border border-border bg-card p-2 shadow-sm">
+      <div className="flex flex-col gap-3">
+        {groups.map((group) => (
+          <div key={group.label}>
+            <p className="mb-1 px-3 pt-1 text-xs font-medium text-muted-foreground">{group.label}</p>
+            <div className="space-y-0.5">
+              {group.items.map((tx) => (
+                <TransactionRow
+                  key={tx.id}
+                  item={{
+                    kind: "transaction",
+                    id: tx.id,
+                    type: tx.type,
+                    amountCents: tx.amountCents,
+                    currency: tx.currency,
+                    description: tx.description,
+                    category: tx.category,
+                    accountName: tx.account?.name,
+                  }}
+                  onClick={() => setEditing(tx)}
+                  onDelete={() => onDelete(tx)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
 
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent>

@@ -26,6 +26,7 @@ model User {
   transactions          Transaction[]
   budgets               Budget[]
   recurringTransactions RecurringTransaction[]
+  transfers             Transfer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -74,21 +75,31 @@ enum TransactionType {
   EXPENSE
 }
 
+enum AccountType {
+  CHECKING
+  SAVINGS
+}
+
 model FinancialAccount {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   name                String
-  currency            String @default("RUB")
-  initialBalanceCents Int    @default(0)
+  currency            String      @default("RUB")
+  initialBalanceCents Int         @default(0)
   color               String?
   icon                String?
-  archived            Boolean @default(false)
-  sortOrder           Int     @default(0)
+  archived            Boolean     @default(false)
+  sortOrder           Int         @default(0)
+  accountType         AccountType @default(CHECKING)
+  goalAmountCents     Int?
+  goalDate            DateTime?
 
   transactions          Transaction[]
   recurringTransactions RecurringTransaction[]
+  transfersOut          Transfer[]              @relation("TransferFrom")
+  transfersIn           Transfer[]              @relation("TransferTo")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -195,4 +206,24 @@ model RecurringTransaction {
   updatedAt DateTime @updatedAt
 
   @@index([userId, nextRunAt])
+}
+
+model Transfer {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fromAccountId String
+  fromAccount   FinancialAccount @relation("TransferFrom", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  toAccountId   String
+  toAccount     FinancialAccount @relation("TransferTo", fields: [toAccountId], references: [id], onDelete: Cascade)
+
+  amountCents Int
+  currency    String   @default("RUB")
+  description String?
+  date        DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
 }

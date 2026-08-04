@@ -9,18 +9,18 @@ describe("groupSpendingByCategory", () => {
       { amountCents: 2000, category: { id: "b", name: "Транспорт" } },
     ]);
 
-    expect(result).toContainEqual({ name: "Продукты", total: 15 });
-    expect(result).toContainEqual({ name: "Транспорт", total: 20 });
+    expect(result).toContainEqual({ id: "a", name: "Продукты", total: 15 });
+    expect(result).toContainEqual({ id: "b", name: "Транспорт", total: 20 });
     expect(result).toHaveLength(2);
   });
 
-  it("buckets rows with no category as 'Без категории'", () => {
+  it("buckets rows with no category as 'Без категории' with a null id", () => {
     const result = groupSpendingByCategory([
       { amountCents: 300, category: null },
       { amountCents: 200, category: null },
     ]);
 
-    expect(result).toEqual([{ name: "Без категории", total: 5 }]);
+    expect(result).toEqual([{ id: null, name: "Без категории", total: 5 }]);
   });
 
   it("returns an empty array for no rows", () => {
@@ -48,6 +48,7 @@ describe("groupSpendingByCategory", () => {
     expect(result).toHaveLength(5);
     expect(result.slice(0, 4).map((r) => r.name)).toEqual(["Cat 0", "Cat 1", "Cat 2", "Cat 3"]);
     expect(result[4].name).toBe("Остальное");
+    expect(result[4].id).toBeUndefined();
     // Cat 4..Cat 8 = (5+4+3+2+1) * 100 cents = 1500 cents = 15 units
     expect(result[4].total).toBe(15);
   });

@@ -162,6 +162,14 @@ textarea {
   color-scheme: dark;
 }
 
+/* Recharts pie sectors become clickable (category drill-down) but aren't a
+   real keyboard-navigable control set — the default browser focus rectangle
+   left over from a mouse click looks broken, not helpful. */
+.recharts-sector:focus,
+.recharts-pie-sector:focus {
+  outline: none;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

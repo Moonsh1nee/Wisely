@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   PieChart,
   Pie,
@@ -22,11 +23,19 @@ const COLORS = [
 ];
 
 interface SpendingSlice {
+  id: string | null | undefined;
   name: string;
   total: number;
 }
 
 export function SpendingByCategoryChart({ data }: { data: SpendingSlice[] }) {
+  const router = useRouter();
+
+  const onSliceClick = (entry: SpendingSlice) => {
+    if (entry.id === undefined) return; // "Остальное" — no single category to filter by
+    router.push(`/transactions?category=${entry.id === null ? "none" : entry.id}`);
+  };
+
   if (data.length === 0) {
     return (
       <div className="flex h-72 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center">
@@ -62,9 +71,11 @@ export function SpendingByCategoryChart({ data }: { data: SpendingSlice[] }) {
                 {data.map((entry, index) => (
                   <Cell
                     key={entry.name}
-                    fill={entry.name === "Остальное" ? "var(--muted-foreground)" : COLORS[index % COLORS.length]}
-                    fillOpacity={entry.name === "Остальное" ? 0.4 : 1}
+                    fill={entry.id === undefined ? "var(--muted-foreground)" : COLORS[index % COLORS.length]}
+                    fillOpacity={entry.id === undefined ? 0.4 : 1}
                     stroke="none"
+                    className={entry.id === undefined ? "cursor-default" : "cursor-pointer"}
+                    onClick={() => onSliceClick(entry)}
                   />
                 ))}
               </Pie>
