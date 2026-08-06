@@ -94,6 +94,17 @@ export default function LoginPage() {
               </Link>
             </p>
           </form>
+
+          <div className="mt-4 border-t border-border pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => signIn("getgrip", { callbackUrl: "/dashboard" })}
+            >
+              Войти через GetGrip
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </main>
