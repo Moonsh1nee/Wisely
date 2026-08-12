@@ -5,6 +5,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuItem,
@@ -23,7 +24,9 @@ export function UserMenu({ name, email }: { name: string | null; email: string }
         <span className="hidden max-w-32 truncate sm:inline">{displayName}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>{email}</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{email}</DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
